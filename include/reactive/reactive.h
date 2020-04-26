@@ -156,6 +156,34 @@ public:
   }
 };
 
+template<typename...Ts>
+class signal
+{
+public:
+  std::vector<std::function<void(Ts...)>> callbacks;
+
+  template<typename...Args>
+  void operator()(Args &&... args)
+  {
+    for (auto& f : callbacks)
+    {
+      f(std::forward<Args>(args)...);
+    }
+  }
+};
+
+template<typename...Ts, typename F>
+void connect(signal<Ts...>& sig, F&& callback)
+{
+  sig.callbacks.emplace_back(callback);
+}
+
+template<typename...Ts, typename...Args>
+void emit(signal<Ts...>& sig, Args&&... args)
+{
+  sig(std::forward<Args>(args)...);
+}
+
 } // namespace react
 
 #endif // REACTIVE_REACTIVE_H

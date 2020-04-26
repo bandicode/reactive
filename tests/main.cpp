@@ -36,6 +36,19 @@ int main()
     react::changed(str);
   }
 
+  {
+    react::signal<bool, std::string> sig;
+    react::connect(sig, [](bool repeat, std::string mssg) {
+      std::cout << mssg << std::endl;
+
+      if (repeat)
+        std::cout << mssg << std::endl;
+
+      });
+
+    react::emit(sig, true, "Ok");
+  }
+
   return 0;
 }
 
