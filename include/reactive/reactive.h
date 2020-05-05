@@ -25,7 +25,7 @@ namespace react
 class REACTIVE_API Engine
 {
 public:
-  bool evaluating = false;
+  bool track_dependencies = false;
   std::vector<void*> dependencies;
   std::vector<std::function<void(void)>> callbacks;
   std::unordered_map<void*, size_t> bindings;
@@ -38,7 +38,7 @@ template<typename T>
 T& dep(T& x)
 {
   Engine& e = engine();
-  if (!e.evaluating)
+  if (e.track_dependencies)
     e.dependencies.push_back(reinterpret_cast<void*>(&x));
   return x;
 }
@@ -48,7 +48,9 @@ void bind(T& x, F&& func)
 {
   Engine& e = engine();
 
+  e.track_dependencies = true;
   x = func();
+  e.track_dependencies = false;
 
   e.callbacks.push_back([&x, func]() {
     x = func();
@@ -71,8 +73,6 @@ void hook(T& x, F&& func)
 
   e.callbacks.push_back(std::forward<F>(func));
   e.subscribers[reinterpret_cast<void*>(&x)].push_back(e.callbacks.size() - 1);
-
-  e.dependencies.clear();
 }
 
 template<typename T>
@@ -84,14 +84,10 @@ void changed(T& x)
 
   if (it != e.subscribers.end())
   {
-    e.evaluating = true;
-
     for (size_t index : it->second)
     {
       e.callbacks[index]();
     }
-
-    e.evaluating = false;
   }
 }
 
